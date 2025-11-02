@@ -33,3 +33,13 @@ services:
       KAFKA_BROKER: kafka:9092
     depends_on:
       - kafka
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - flask-app
