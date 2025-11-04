@@ -1,11 +1,12 @@
 import os
-from flask import Flask,jsonify
-from models import db, Stock
+from flask import Flask, jsonify, request
+from models import db, Stock, User
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
-
+    CORS(app, resources={r"/*": {"origins": "*"}})
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -23,6 +24,7 @@ def create_app():
     @app.route('/register', methods=['POST'])
     def register():
         data = request.get_json()
+        print(data)
         name = data.get('name')
         email = data.get('email')
         password = data.get('password')
@@ -77,7 +79,21 @@ def create_app():
     @app.route('/data')
     def get_stocks():
         stocks = Stock.query.all()
-        return jsonify(stocks)
+        # Serialize SQLAlchemy objects to JSON-safe structure
+        result = [
+            {
+                "id": s.id,
+                "symbol": s.symbol,
+                "name": s.name,
+                "last": s.last,
+                "change": s.change,
+                "percent_change": s.percent_change,
+                "price_volume": s.price_volume,
+                "time": s.time.isoformat() if s.time else None,
+            }
+            for s in stocks
+        ]
+        return jsonify(result)
         #return {stock.symbol: stock.last for stock in stocks}
 
     return app
