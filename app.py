@@ -1,8 +1,47 @@
 import os
+import threading
 from flask import Flask, jsonify, request
 from models import db, Stock, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
+from kafka import KafkaConsumer
+
+def consume_stock_updates(app):
+    """Kafka consumer thread that updates database with new stock data."""
+    consumer = KafkaConsumer(
+        "stock_updates",
+        bootstrap_servers=["kafka:9092"],  # or "localhost:9092" if running locally
+        value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+        auto_offset_reset="earliest",
+        enable_auto_commit=True,
+        group_id="stock-group",
+        api_version=(2, 5, 0)
+    )
+
+    with app.app_context():
+        print("Kafka consumer started and listening for stock updates...")
+        for message in consumer:
+            data = message.value
+            print(f"Consumed from Kafka: {data}")
+
+            # Update or insert stock
+            stock = Stock.query.filter_by(symbol=data["symbol"]).first()
+            if stock:
+                stock.price_volume = data["price_volume"]
+                stock.time = data["time"]
+            else:
+                stock = Stock(
+                    symbol=data["symbol"],
+                    name=data["name"],
+                    last=data["last"],
+                    change=data["change"],
+                    percent_change=data["percent_change"],
+                    price_volume=data["price_volume"],
+                    time=data["time"]
+                )
+                db.session.add(stock)
+            db.session.commit()
+
 
 def create_app():
     app = Flask(__name__)
@@ -24,7 +63,6 @@ def create_app():
     @app.route('/register', methods=['POST'])
     def register():
         data = request.get_json()
-        print(data)
         name = data.get('name')
         email = data.get('email')
         password = data.get('password')
@@ -75,7 +113,7 @@ def create_app():
             }
         }), 200
 
-            #Simple route to query database
+    #Simple route to query database
     @app.route('/data')
     def get_stocks():
         stocks = Stock.query.all()
@@ -100,5 +138,8 @@ def create_app():
         #T22101998
 if __name__ == '__main__':
     app = create_app()
+
+    consumer_thread = threading.Thread(target=consume_stock_updates, args=(app,), daemon=True)
+    consumer_thread.start()
     app.run(host='0.0.0.0', port=5000)
     
