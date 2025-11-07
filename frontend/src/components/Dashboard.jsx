@@ -4,17 +4,28 @@ import Sidebar from "../components/Sidebar";
 
 export default function Dashboard() {
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getData = async () => {
+      setLoading(true);
       try {
         const response = await fetchData();
         setRows(response.data);
       } catch (err) {
         console.error("Failed to fetch data:", err);
+      } finally {
+        setLoading(false);
       }
     };
+
+    // Fetch immediately on mount
     getData();
+
+    const interval = setInterval(getData, 5000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -22,6 +33,14 @@ export default function Dashboard() {
       <Sidebar />
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold mb-6 text-blue-600">Dashboard</h1>
+
+        {/* Optional loading indicator */}
+        {loading && (
+          <p className="text-sm text-gray-500 mb-2 animate-pulse">
+            Refreshing data...
+          </p>
+        )}
+
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
             <thead>
