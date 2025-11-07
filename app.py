@@ -1,16 +1,18 @@
 import os
 import threading
+import json
 from flask import Flask, jsonify, request
 from models import db, Stock, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from kafka import KafkaConsumer
+from datetime import date
 
 def consume_stock_updates(app):
     """Kafka consumer thread that updates database with new stock data."""
     consumer = KafkaConsumer(
         "stock_updates",
-        bootstrap_servers=["kafka:9092"],  # or "localhost:9092" if running locally
+        bootstrap_servers=["kafka:9092"], 
         value_deserializer=lambda v: json.loads(v.decode("utf-8")),
         auto_offset_reset="earliest",
         enable_auto_commit=True,
@@ -26,9 +28,14 @@ def consume_stock_updates(app):
 
             # Update or insert stock
             stock = Stock.query.filter_by(symbol=data["symbol"]).first()
+            try:
+                parsed_time = datetime.fromisoformat(data["time"]).date()  # from "YYYY-MM-DD" string
+            except Exception:
+                parsed_time = date.today()
+
             if stock:
                 stock.price_volume = data["price_volume"]
-                stock.time = data["time"]
+                stock.time = parsed_time
             else:
                 stock = Stock(
                     symbol=data["symbol"],
@@ -37,7 +44,7 @@ def consume_stock_updates(app):
                     change=data["change"],
                     percent_change=data["percent_change"],
                     price_volume=data["price_volume"],
-                    time=data["time"]
+                    time=parsed_time
                 )
                 db.session.add(stock)
             db.session.commit()
