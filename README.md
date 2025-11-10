@@ -108,25 +108,10 @@ Access the application via **http://localhost:5173**
 
 ---
 
-## 🔮 Future Enhancements
-- ☁️ Deploy on AWS/GCP using container registries.  
-- 📈 Implement live Kafka producers for streaming stock data.  
-- 🧮 Upgrade SQLite to PostgreSQL for production scalability.  
-
----
-
 ## 🧭 Learning Outcomes
 - Integrated multiple technologies across the full stack.  
 - Gained DevOps and CI/CD exposure using Docker.  
 - Debugged container networking and dependency issues.  
-
----
-
-## 📸 Demo Screens
-Registration → Login → Dashboard → Real-time updates  
-*(Include screenshots or GIFs here for visual flow)*
-
----
 
 ## 🙌 Acknowledgments
 Built with ❤️ by **Yukta Piyush Shah** 
