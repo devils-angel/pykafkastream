@@ -95,6 +95,8 @@ cd pykafkastream
 
 # Build and start all services
 docker-compose up --build
+# To run in detached mode
+docker-compose up -d --build
 ```
 
 Access the application via **http://localhost:5173**
